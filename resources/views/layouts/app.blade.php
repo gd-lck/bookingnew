@@ -14,22 +14,31 @@
 <body class="p-0 m-0">
     @guest
         @include('layouts.navigationCust')
+        <main class="content">
+            @yield('content')
+        </main>
+        @include('layouts.footer')
     @else
         @role('admin')
-            @include('layouts.navigationAdmin')
+            <div class="flex min-h-screen">
+                @include('layouts.navigationAdmin') {{-- Sidebar --}}
+                <main class="flex-1 p-4"> {{-- Konten admin --}}
+                    @yield('content')
+                </main>
+            </div>
         @else
             @include('layouts.navigationCust')
+            <main class="content">
+                @yield('content')
+            </main>
         @endrole
-     @endguest
+    @endguest
 
-
-    <main class="content">
-        @yield('content')
-    </main>
     @role('customer')
         @include('layouts.footer')
     @endrole
     @yield('scripts')
     @stack('scripts')
 </body>
+
 </html>

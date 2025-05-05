@@ -46,10 +46,9 @@
     <section id="section2" class="flex flex-row h-screen w-screen bg-pink-200 p-0 ">
         <div class="h-screen flex-1 bg-white px-5  flex flex-row p-0">
             <div class=" h-screen w-100 flex flex-col justify-around font-bold text-black pt-10">
-                <p class="justify-center p-3">Studio kecantikan terpercaya yang menghadirkan layanan profesional dan inovatif, serta memberikan pengalaman terbaik bagi setiap pelanggan dalam mengekspresikan kecantikan mereka</p>
-                
+                <p class="text-center self-center p-3">"Studio kecantikan terpercaya yang menghadirkan layanan profesional dan inovatif, serta memberikan pengalaman terbaik bagi setiap pelanggan dalam mengekspresikan kecantikan mereka"</p>
                 <div class="bg-pink-200 flex flex-col justify-between h-60 pt-10">
-                    <p class="font-bold text-white">Find Us!</p>
+                    <p class="font-bold text-white w-full flex justify-center">Find Us!</p>
                     <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3791.3329552794216!2d115.2858329286466!3d-8.552442292062539!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd2178b380886a3%3A0x826a8aa805d5207e!2sYours%20Beauty!5e1!3m2!1sid!2sid!4v1745910970680!5m2!1sid!2sid"
                         class="w-full h-40 border-0 shadow-md" 
                         allowfullscreen="" 

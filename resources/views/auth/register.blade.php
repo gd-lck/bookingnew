@@ -9,11 +9,24 @@
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
-        <!-- Email Address -->
+        <!-- telepon -->
         <div class="mt-4">
             <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
+            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required/>
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        </div>
+
+        <div class="mt-4">
+            <x-input-label for="alamat" :value="__('Alamat')" />
+            <x-text-input id="alamat" class="block mt-1 w-full" type="text" :value="old('alamat')" name="alamat"  required />
+            <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
+        </div>
+
+
+        <div class="mt-4">
+            <x-input-label for="telepon" :value="__('Telepon')" />
+            <x-text-input id="telepon" class="block mt-1 w-full" type="tel" name="telepon" :value="old('telepon')" pattern="[0-9]{10,15}" placeholder="08xxxxxxxxxx"  required />
+            <x-input-error :messages="$errors->get('telepon')" class="mt-2" />
         </div>
 
         <!-- Password -->

@@ -1,7 +1,6 @@
 <nav class="fixed w-screen top-0 left-0 right-0 flex flex-row h-15 px-8 pt-5 justify-between">
     {{-- Logo --}}
-    <img src="{{ asset('assets/image/web/logo.png') }}" class="size-20 flex-none">
-
+    <img src="{{ asset('storage/' . $perusahaan->logo) }}" class="size-20 flex-none">
     {{-- Menu Tengah --}}
     <div class="flex gap-5 justify-center">
         <a href="{{ url('/') }}#section1" class="bg-transparent hover:bg-transparent text-pink-500 hover:text-pink-600">Beranda</a>

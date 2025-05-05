@@ -3,12 +3,13 @@
         <ul >
             <p class="font-bold text-white text-start">Yours Beauty</p>
             <li>Jam Operasional	 : 10.00 - 20.00</li>
-            <li>Alamat			 : Jl. Ir. Sutami, Kemenuh, Kec. Sukawati, Kab Gianyar, Bali.</li>
+            <li>Alamat			 : {{$perusahaan->alamat}}.</li>
         </ul>
         <ul>
             Hubungi Kami 
-            <li> No Tlp			 : 087761558213</li>
+            <li> No Tlp			 : {{$perusahaan->telepon}}</li>
             <li> Instagram		 : @yoursbeautyy_</li>
+            <li> email           : {{$perusahaan->email}}</li>
         </ul>
     </div>
     

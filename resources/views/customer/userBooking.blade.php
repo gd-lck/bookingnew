@@ -47,10 +47,10 @@
                             </td>
                             <td class="py-3 px-4 space-y-1">
                                 @if ($booking->status == 'pending' && (!$booking->payment || $booking->payment->payment_status == 'unpaid'))
-                                    <a href="{{ route('customer.payBooking', $booking->id) }}"
-                                       class="text-blue-500 hover:underline block">
-                                        Bayar Sekarang
-                                    </a>
+                                <a href="{{ route('customer.payBooking', $booking->id) }}"
+                                   class="text-blue-500 hover:underline block">
+                                    Bayar Sekarang
+                                </a>
                                 @elseif ($booking->payment->payment_status == 'paid')
                                     <span class="text-green-600 font-semibold block">Sudah Dibayar</span>
                                 @endif

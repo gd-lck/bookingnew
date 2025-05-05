@@ -26,4 +26,9 @@ class booking extends Model
     {
         return $this->belongsTo(User::class);
     } 
+
+    public function reschedules()
+    {
+       return $this->hasMany(Reschedule::class, 'id_booking');
+    }
 }

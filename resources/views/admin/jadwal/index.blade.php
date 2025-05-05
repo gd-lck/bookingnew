@@ -3,7 +3,7 @@
 @section('title', 'Jadwal')
 
 @section('content')
-<div x-data="{ tambahModal: false, editModalId: null }" class="py-10 pl-72">
+<div x-data="{ tambahModal: false, editModalId: null }" class="py-10">
     <h2 class="text-2xl font-bold text-pink-600 mb-6">Jadwal Karyawan</h2>
 
     @if(session('success'))

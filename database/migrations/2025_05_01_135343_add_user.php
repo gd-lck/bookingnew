@@ -11,13 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('profil_perusahaans', function(Blueprint $table){
-            $table -> id();
-            $table -> string('nama_perusahaan');
-            $table -> string('alamat');
-            $table -> string('no_telepon');
-            $table -> string('email');
-            $table -> string('logo');
+        Schema::table('users', function (Blueprint $table){
+            $table->string('telepon')->after('email')->nullable();
+            $table->string('alamat')->after('telepon')->nullable();
         });
     }
 
@@ -26,6 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        schema::dropIfExists('profil_perusahaans');
+        Schema::table('users', function (Blueprint $table){
+            $table->dropColumn('telepon');
+            $table->dropColumn('alamat');
+        });
     }
 };

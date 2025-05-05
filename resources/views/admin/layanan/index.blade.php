@@ -7,7 +7,7 @@
 @endphp
 
 @section('content')
-<div x-data="{ tambahModal: false, modalId: null }" class="pl-72 py-10">
+<div x-data="{ tambahModal: false, modalId: null }" class="py-10">
     @if (session('error'))
         <div class="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">{{ session('error') }}</div>
     @endif
@@ -53,11 +53,11 @@
                         {{ Str::words($item->deskripsi, 10, '...') }}
                     </td>
                     <td class="py-2 px-4 space-x-2">
-                        <button @click="modalId = {{ $item->id }}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">Update</button>
+                        <button @click="modalId = {{ $item->id }}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">Edit</button>
                         <form action="{{ route('layanan.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus layanan ini?');" class="inline">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Delete</button>
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Hapus</button>
                         </form>
                     </td>
                 </tr>

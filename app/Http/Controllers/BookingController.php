@@ -8,10 +8,12 @@ use App\Models\Jadwal;
 use App\Models\Karyawan;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Booking;
-use App\Models\Payment; 
+use App\Models\Payment;
+use App\Models\Reschedule; 
 use Carbon\Carbon;
 use Midtrans\Config;
 use Midtrans\Snap;
+use PDF;
 use Illuminate\Support\Facades\Log;
 
 
@@ -19,10 +21,24 @@ class BookingController extends Controller
 {
     public function index()
     {
-        $bookings = Booking::with(['user','karyawan','layanan','payment','booking_time'])->paginate(10);
+        $bookings = Booking::with(['user', 'karyawan', 'layanan', 'payment', 'reschedules'])->paginate(10);
 
         return view('admin.Booking.index', compact('bookings'));
     }
+
+    public function dashboard()
+    {
+        $today = Carbon::today();
+        $startOfWeek = Carbon::now()->startOfWeek();
+        $startOfMonth = Carbon::now()->startOfMonth();
+
+        $bookingHarian = Booking::whereDate('booking_time', $today)->count();
+        $bookingMingguan = Booking::whereBetween('booking_time', [$startOfWeek, Carbon::now()])->count();
+        $bookingBulanan = Booking::whereBetween('booking_time', [$startOfMonth, Carbon::now()])->count();
+
+        return view('admin.dashboard', compact('bookingHarian', 'bookingMingguan', 'bookingBulanan'));
+    }
+
 
     public function userBooking()
     {
@@ -39,6 +55,24 @@ class BookingController extends Controller
         $layananTerpilih = $layanan_id ? Layanan::find($layanan_id) : null;
         return view('customer.booking', compact('layanans', 'layananTerpilih'));
     }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+        $booking->status = $request->status;
+        $booking->save();
+
+        return redirect()->back()->with('success', 'Status booking berhasil diperbarui.');
+    }
+
+    public function paymentSuccess(Booking $booking)
+{
+    if ($booking->user_id !== Auth::id()) {
+        abort(403);
+    }
+
+    return view('customer.paymentSuccess', compact('booking'));
+}
 
   
     public function store(Request $request)
@@ -78,14 +112,14 @@ class BookingController extends Controller
             'status' => 'pending'
         ]);
     
-      
+        
         $layanan = $booking->layanan;
         $user = $booking->user;
+        $hargaInt = (int) round($layanan->harga);
         
-      
         $payment = Payment::create([
             'booking_id' => $booking->id,
-            'amount' => $layanan->harga,
+            'amount' => $hargaInt,
             'payment_status' => 'unpaid',
             'payment_method' => 'qris',
         ]);
@@ -94,12 +128,13 @@ class BookingController extends Controller
         Config::$isProduction = config('services.midtrans.is_production', false);
         Config::$isSanitized = config('services.midtrans.is_sanitized', true);
         Config::$is3ds = config('services.midtrans.is_3ds', true);
-    
+        
+
         // Persiapan data snap 
         $params = [
             'transaction_details' => [
-                'order_id' => 'ORDER-' . $booking->id,  
-                'gross_amount' => $layanan->harga,     
+                'order_id' => 'ORDER-' . $booking->id,
+                'gross_amount' => $hargaInt,
             ],
             'customer_details' => [
                 'first_name' => $user->name,
@@ -107,16 +142,19 @@ class BookingController extends Controller
             ],
             'item_details' => [[
                 'id' => $layanan->id,
-                'price' => $layanan->harga,
+                'price' => $hargaInt,
                 'quantity' => 1,
                 'name' => $layanan->nama_layanan
-            ]]
+            ]],
+            'expiry' => [
+                'start_time' => now()->format("Y-m-d H:i:s O"),
+                'unit' => 'minute',
+                'duration' => 30  // QRIS berlaku 30 menit
+            ]
         ];
-    
         
         $snapToken = Snap::getSnapToken($params);
-    
-    
+          
         return view('customer.payment', compact('snapToken', 'booking'));
     }
     
@@ -153,12 +191,27 @@ class BookingController extends Controller
                 $booking->payment->payment_status = 'paid';
                 $booking->payment->payment_date = now();
                 $booking->payment->save();
+
+                try {
+                    \Mail::to($booking->user->email)->send(new \App\Mail\PaymentSuccessMail($booking));
+                } catch (\Exception $e) {
+                    Log::error('Gagal mengirim email pembayaran: ' . $e->getMessage());
+                }
             }
+
         } elseif (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
             $booking->status = 'canceled';
             if ($booking->payment) {
                 $booking->payment->payment_status = 'failed';
                 $booking->payment->save();
+
+                try {
+                    \Mail::to($booking->user->email)->send(new \App\Mail\PaymentFailedMail($booking));
+                } catch (\Exception $e) {
+                    Log::error('Gagal mengirim email pembayaran: ' . $e->getMessage());
+                }
+
+
             }
         }
 
@@ -186,11 +239,12 @@ class BookingController extends Controller
 
         $user = $booking->user;
         $layanan = $booking->layanan;
+        $hargaInt = (int) round($layanan->harga);
 
         $params = [
             'transaction_details' => [
                 'order_id' => 'ORDER-' . $booking->id,
-                'gross_amount' => $layanan->harga,
+                'gross_amount' => $hargaInt,
             ],
             'customer_details' => [
                 'first_name' => $user->name,
@@ -198,48 +252,113 @@ class BookingController extends Controller
             ],
             'item_details' => [[
                 'id' => $layanan->id,
-                'price' => $layanan->harga,
+                'price' => $hargaInt,
                 'quantity' => 1,
                 'name' => $layanan->nama_layanan
-            ]]
-        ];
+            ]],
+            'expiry' => [
+                'start_time' => now()->format("Y-m-d H:i:s O"),
+                'unit' => 'minute',
+                'duration' => 30  // QRIS berlaku 30 menit
+            ]
+        ];        
 
         $snapToken = Snap::getSnapToken($params);
 
         return view('customer.payment', compact('snapToken', 'booking'));
     }
 
+    public function destroy($id)
+    {
+    $booking = Booking::findOrFail($id);
+
+    if ($booking->payment) {
+        $booking->payment->delete();
+    }   
+    $booking->delete();
+
+    return redirect()->route('booking.index')->with('success', 'Booking berhasil dihapus.');
+    }
 
 
-    public function reschedule(Request $request, $id){
-
-        $request -> validate([
+    
+    public function reschedule(Request $request, $id)
+    {
+        $request->validate([
             'booking_date' => 'required|date|after_or_equal:today',
             'booking_time' => 'required|date_format:H:i',
         ]);
+    
         $datetime = Carbon::parse($request->booking_date . ' ' . $request->booking_time);
-
+    
         $layanan = Layanan::findOrFail($request->layanan_id);
-        $durasi = (float)$layanan->durasi; 
-        
-        $bookingEnd = $datetime->copy()->addMinute($durasi);
-        
+        $durasi = (float) $layanan->durasi; 
+    
+        $bookingEnd = $datetime->copy()->addMinutes($durasi);
+    
         $bookingStartTime = $datetime->format('H:i:s');
         $bookingEndTime = $bookingEnd->format('H:i:s');
-
+    
         $booking = Booking::findOrFail($id);
-
+    
+        // Simpan jadwal lama sebelum diubah
+        $jadwal_awal = $booking->booking_time;
+    
+        // Buat entri reschedule
+        Reschedule::create([
+            'id_booking'   => $booking->id,
+            'jadwal_awal'  => $jadwal_awal,
+            'jadwal_baru'  => $datetime,
+        ]);
+    
+        // Update booking
         $booking->karyawan_id = $request->karyawan_id;
         $booking->layanan_id = $request->layanan_id;
         $booking->booking_time = $datetime;
         $booking->booking_start = $bookingStartTime;
         $booking->booking_end = $bookingEndTime;
-
+    
         $booking->save();
-
+    
         return redirect(route('customer.userBooking'));
     }
 
+    public function laporan(Request $request)
+    {
+        $bulan = $request->bulan;
+
+        $query = Booking::with(['user', 'layanan', 'payment'])
+            ->when($bulan, function ($q) use ($bulan) {
+                $q->whereMonth('booking_time', '=', date('m', strtotime($bulan)))
+                ->whereYear('booking_time', '=', date('Y', strtotime($bulan)));
+            })
+            ->orderByDesc('booking_time');
+
+        $bookings = $query->get();
+
+        return view('admin.Booking.laporan', compact('bookings', 'bulan'));
+    }
+
+ 
+
+    public function exportPdf(Request $request)
+    {
+        $bulan = $request->bulan;
+
+        $query = Booking::with(['user', 'layanan', 'payment'])
+            ->when($bulan, function ($q) use ($bulan) {
+                $q->whereMonth('booking_time', '=', date('m', strtotime($bulan)))
+                ->whereYear('booking_time', '=', date('Y', strtotime($bulan)));
+            });
+
+        $bookings = $query->get();
+
+        $pdf = PDF::loadView('admin.Booking.laporan-pdf', compact('bookings', 'bulan'))->setPaper('a4', 'landscape');
+
+        return $pdf->download('laporan-booking-' . ($bulan ?? 'semua') . '.pdf');
+    }
+
+    
 
     public function cariKaryawan(Request $request)
     {
@@ -278,5 +397,6 @@ class BookingController extends Controller
             return response()->json(['message' => 'Terjadi kesalahan saat memuat data karyawan.'], 500);
         }
     }
+
     
 }
